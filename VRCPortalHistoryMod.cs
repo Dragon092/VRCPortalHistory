@@ -10,6 +10,8 @@ using UnityEngine;
 using VRC;
 using VRC.Core;
 using UIExpansionKit.API;
+using VRChatUtilityKit.Utilities;
+using UnhollowerRuntimeLib.XrefScans;
 
 namespace VRCPortalHistory
 {
@@ -20,9 +22,7 @@ namespace VRCPortalHistory
 
         public override void OnApplicationStart()
         {
-            PortalUtils.Init();
-
-            HarmonyInstance.Patch(PortalUtils.enterPortal, prefix: new HarmonyMethod(typeof(VRCPortalHistoryMod).GetMethod("OnPortalEnter", BindingFlags.Static | BindingFlags.Public)));
+            HarmonyInstance.Patch(typeof(PortalInternal).GetMethods().Where(mb => mb.Name.StartsWith("Method_Public_Void_") && mb.Name.Length <= 21 && XrefUtils.CheckUsedBy(mb, "OnTriggerEnter")).First(), prefix: new HarmonyMethod(typeof(VRCPortalHistoryMod).GetMethod("OnPortalEnter", BindingFlags.Static | BindingFlags.Public)));
             HarmonyInstance.Patch(typeof(PortalInternal).GetMethod("ConfigurePortal"), postfix: new HarmonyMethod(typeof(VRCPortalHistoryMod).GetMethod("OnPortalDropped", BindingFlags.Static | BindingFlags.Public)));
             HarmonyInstance.Patch(typeof(PortalInternal).GetMethod("OnDestroy"), prefix: new HarmonyMethod(typeof(VRCPortalHistoryMod).GetMethod("OnPortalDestroyed", BindingFlags.Static | BindingFlags.Public)));
 
@@ -134,15 +134,60 @@ namespace VRCPortalHistory
 
         private void respawnLastPortal()
         {
-            if(last_apiWorld is null || last_apiWorldInstance is null)
+            if (last_apiWorld is null || last_apiWorldInstance is null)
             {
                 MelonLogger.Msg("Error: no last_apiWorld or no last_apiWorldInstance");
                 return;
             }
 
-            Transform playerTransform = Utilities.GetLocalPlayerTransform();
+            Transform playerTransform = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform;
 
             Utilities.CreatePortal(last_apiWorld, last_apiWorldInstance, playerTransform.position, playerTransform.forward, true);
+        }
+    }
+
+    public static class Utilities
+    {
+        private static CreatePortalDelegate ourCreatePortalDelegate;
+
+        private delegate bool CreatePortalDelegate(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 position, Vector3 forward, bool withUIErrors);
+
+        private static CreatePortalDelegate GetCreatePortalDelegate
+        {
+            get
+            {
+                if (ourCreatePortalDelegate != null) return ourCreatePortalDelegate;
+                MethodInfo portalMethod = typeof(PortalInternal).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly).First(
+                    m => m.ReturnType == typeof(bool)
+                         && m.HasParameters(typeof(ApiWorld), typeof(ApiWorldInstance), typeof(Vector3), typeof(Vector3), typeof(bool))
+                         && m.XRefScanFor("admin_dont_allow_portal"));
+                ourCreatePortalDelegate = (CreatePortalDelegate)Delegate.CreateDelegate(typeof(CreatePortalDelegate), portalMethod);
+                return ourCreatePortalDelegate;
+            }
+        }
+
+        public static bool CreatePortal(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 position, Vector3 forward, bool showAlerts)
+        {
+            return GetCreatePortalDelegate(apiWorld, apiWorldInstance, position, forward, showAlerts);
+        }
+
+        private static bool HasParameters(this MethodBase methodBase, params Type[] types)
+        {
+            ParameterInfo[] parameters = methodBase.GetParameters();
+            int typesLength = types.Length;
+            if (parameters.Length < typesLength) return false;
+
+            for (var i = 0; i < typesLength; ++i)
+                if (parameters[i].ParameterType != types[i])
+                    return false;
+
+            return true;
+        }
+
+        public static bool XRefScanFor(this MethodBase methodBase, string searchTerm)
+        {
+            return XrefScanner.XrefScan(methodBase).Any(
+                xref => xref.Type == XrefType.Global && xref.ReadAsObject()?.ToString().IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0);
         }
     }
 }
