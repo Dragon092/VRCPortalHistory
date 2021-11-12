@@ -17,8 +17,7 @@ namespace VRCPortalHistory
 {
     public class VRCPortalHistoryMod : MelonMod
     {
-        private static ApiWorld last_apiWorld = null;
-        private static ApiWorldInstance last_apiWorldInstance = null;
+        private static List<PortalHistoryEntry> portalHistoryList = new List<PortalHistoryEntry>();
 
         public override void OnApplicationStart()
         {
@@ -33,59 +32,7 @@ namespace VRCPortalHistory
 
         public static void OnPortalDropped(MonoBehaviour __instance, Player __3)
         {
-            //cachedDroppers.Add(__instance.GetInstanceID(), __3);
             MelonLogger.Msg("OnPortalDropped");
-
-            /*
-            MelonLogger.Msg(__instance.name);
-
-            GameObject test_go = __instance.gameObject;
-
-            MelonLogger.Msg(test_go.name);
-
-            PortalInternal portalInternal = test_go.GetComponentInChildren<PortalInternal>();
-
-            if (!portalInternal)
-            {
-                MelonLogger.Msg("Error: no portalInternal");
-                return;
-            }
-
-            string roomId = portalInternal.field_Private_String_1;
-            MelonLogger.Msg(roomId);
-
-            MelonLogger.Msg(portalInternal.field_Private_ApiWorld_0);
-            var world = new ApiWorld { id = portalInternal.field_Private_ApiWorld_0.id };
-            MelonLogger.Msg(world.id);
-            string worldId = portalInternal.field_Private_ApiWorld_0.id;
-            MelonLogger.Msg(worldId);
-            int roomPop = portalInternal.field_Private_Int32_0;
-            MelonLogger.Msg(roomPop);
-
-            */
-
-            //Transform playerTransform = Utilities.GetLocalPlayerTransform();
-            //bool created = Utilities.CreatePortal(apiWorld, apiWorldInstance, playerTransform.position, playerTransform.forward, true);
-
-            //MelonLogger.Msg(_roomId);
-            //MelonLogger.Msg(__instance._idWithTags);
-            //MelonLogger.Msg(__instance._playerCount);
-            //MelonLogger.Msg(__instance.instigator);
-
-            /*
-            if (!(__instance is PortalInternal))
-            {
-                MelonLogger.Msg("Not PortalInternal");
-                return;
-            }
-
-            MelonLogger.Msg("PortalInternal");
-
-            PortalInternal portalInternal = (PortalInternal)__instance;
-
-            
-            */
-
         }
 
         public static void OnPortalDestroyed(MonoBehaviour __instance)
@@ -115,8 +62,15 @@ namespace VRCPortalHistory
 
             ApiWorldInstance apiWorldInstance = new ApiWorldInstance(world, roomId);
 
-            last_apiWorld = world;
-            last_apiWorldInstance = apiWorldInstance;
+
+            PortalHistoryEntry newEntry = new PortalHistoryEntry(world, apiWorldInstance);
+            portalHistoryList.Add(newEntry);
+
+            // Remove old entries
+            if(portalHistoryList.Count > 8)
+            {
+                portalHistoryList.RemoveAt(0);
+            }
 
             /*
             string worldId = portalInternal.field_Private_ApiWorld_0.id;
@@ -134,15 +88,38 @@ namespace VRCPortalHistory
 
         private void respawnLastPortal()
         {
-            if (last_apiWorld is null || last_apiWorldInstance is null)
+            if (portalHistoryList.Count == 0)
             {
-                MelonLogger.Msg("Error: no last_apiWorld or no last_apiWorldInstance");
+                MelonLogger.Msg("Error: no last entry");
                 return;
             }
 
             Transform playerTransform = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform;
 
-            Utilities.CreatePortal(last_apiWorld, last_apiWorldInstance, playerTransform.position, playerTransform.forward, true);
+            var menu = ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescription.QuickMenu4Columns);
+
+            foreach (PortalHistoryEntry portalHistoryEntry in portalHistoryList)
+            {
+                MelonLogger.Msg("Found portal in list: " + portalHistoryEntry.apiWorld.name);
+
+                menu.AddSimpleButton(portalHistoryEntry.apiWorld.name, () => {
+                    Utilities.CreatePortal(portalHistoryEntry.apiWorld, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward, true);
+                });
+            }
+
+            menu.Show();
+        }
+    }
+
+    class PortalHistoryEntry
+    {
+        public ApiWorld apiWorld = null;
+        public ApiWorldInstance apiWorldInstance = null;
+
+        public PortalHistoryEntry(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance)
+        {
+            this.apiWorld = apiWorld;
+            this.apiWorldInstance = apiWorldInstance;
         }
     }
 
