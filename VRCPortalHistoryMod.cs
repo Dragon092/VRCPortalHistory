@@ -63,7 +63,7 @@ namespace VRCPortalHistory
             ApiWorldInstance apiWorldInstance = new ApiWorldInstance(world, roomId);
 
 
-            PortalHistoryEntry newEntry = new PortalHistoryEntry(world, apiWorldInstance);
+            PortalHistoryEntry newEntry = new PortalHistoryEntry(roomId, apiWorldInstance);
             portalHistoryList.Add(newEntry);
 
             // Remove old entries
@@ -100,10 +100,10 @@ namespace VRCPortalHistory
 
             foreach (PortalHistoryEntry portalHistoryEntry in portalHistoryList)
             {
-                MelonLogger.Msg("Found portal in list: " + portalHistoryEntry.apiWorld.name);
+                MelonLogger.Msg("Found portal in list: " + portalHistoryEntry.apiWorldInstance.world.id);
 
-                menu.AddSimpleButton(portalHistoryEntry.apiWorld.name, () => {
-                    Utilities.CreatePortal(portalHistoryEntry.apiWorld, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward, true);
+                menu.AddSimpleButton(portalHistoryEntry.roomId, () => {
+                    Utilities.CreatePortal(portalHistoryEntry.apiWorldInstance.world, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward, true);
                 });
             }
 
@@ -113,12 +113,12 @@ namespace VRCPortalHistory
 
     class PortalHistoryEntry
     {
-        public ApiWorld apiWorld = null;
+        public string roomId = null;
         public ApiWorldInstance apiWorldInstance = null;
 
-        public PortalHistoryEntry(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance)
+        public PortalHistoryEntry(string roomId, ApiWorldInstance apiWorldInstance)
         {
-            this.apiWorld = apiWorld;
+            this.roomId = roomId;
             this.apiWorldInstance = apiWorldInstance;
         }
     }
