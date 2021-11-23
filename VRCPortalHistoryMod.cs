@@ -55,15 +55,20 @@ namespace VRCPortalHistory
             }
 
             string roomId = portalInternal.field_Private_String_1;
-            MelonLogger.Msg(roomId);
+            MelonLogger.Msg("roomId"+roomId);
+
+            string world_name = portalInternal.field_Private_ApiWorld_0.name;
+            MelonLogger.Msg("world_name: "+world_name);
 
             var world = new ApiWorld { id = portalInternal.field_Private_ApiWorld_0.id };
-            MelonLogger.Msg(world.id);
+            MelonLogger.Msg("world.id: " + world.id);
 
             ApiWorldInstance apiWorldInstance = new ApiWorldInstance(world, roomId);
 
+            int instance_id = int.Parse(roomId.Split('~')[0]);
+            MelonLogger.Msg("instance_id: " + instance_id);
 
-            PortalHistoryEntry newEntry = new PortalHistoryEntry(roomId, apiWorldInstance);
+            PortalHistoryEntry newEntry = new PortalHistoryEntry(world_name, instance_id, roomId, apiWorldInstance);
             portalHistoryList.Add(newEntry);
 
             // Remove old entries
@@ -102,7 +107,9 @@ namespace VRCPortalHistory
             {
                 MelonLogger.Msg("Found portal in list: " + portalHistoryEntry.apiWorldInstance.world.id);
 
-                menu.AddSimpleButton(portalHistoryEntry.roomId, () => {
+                string button_text = portalHistoryEntry.world_name + "#" + portalHistoryEntry.instance_id;
+
+                menu.AddSimpleButton(button_text, () => {
                     Utilities.CreatePortal(portalHistoryEntry.apiWorldInstance.world, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward, true);
                 });
             }
@@ -113,11 +120,15 @@ namespace VRCPortalHistory
 
     class PortalHistoryEntry
     {
+        public string world_name = null;
+        public int instance_id = 0;
         public string roomId = null;
         public ApiWorldInstance apiWorldInstance = null;
 
-        public PortalHistoryEntry(string roomId, ApiWorldInstance apiWorldInstance)
+        public PortalHistoryEntry(string world_name, int instance_id, string roomId, ApiWorldInstance apiWorldInstance)
         {
+            this.world_name = world_name;
+            this.instance_id = instance_id;
             this.roomId = roomId;
             this.apiWorldInstance = apiWorldInstance;
         }
