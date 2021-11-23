@@ -72,7 +72,7 @@ namespace VRCPortalHistory
             portalHistoryList.Add(newEntry);
 
             // Remove old entries
-            if(portalHistoryList.Count > 8)
+            if(portalHistoryList.Count > 12)
             {
                 portalHistoryList.RemoveAt(0);
             }
