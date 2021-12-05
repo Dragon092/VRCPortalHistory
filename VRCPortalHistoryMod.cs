@@ -54,19 +54,19 @@ namespace VRCPortalHistory
                 return;
             }
 
-            string roomId = portalInternal.field_Private_String_1;
-            MelonLogger.Msg("roomId"+roomId);
+            string roomId = portalInternal.field_Private_String_4;
+            MelonLogger.Msg("roomId: "+roomId);
 
             string world_name = portalInternal.field_Private_ApiWorld_0.name;
             MelonLogger.Msg("world_name: "+world_name);
 
             var world = new ApiWorld { id = portalInternal.field_Private_ApiWorld_0.id };
-            MelonLogger.Msg("world.id: " + world.id);
+            MelonLogger.Msg("world.id: "+world.id);
 
             ApiWorldInstance apiWorldInstance = new ApiWorldInstance(world, roomId);
 
             int instance_id = int.Parse(roomId.Split('~')[0]);
-            MelonLogger.Msg("instance_id: " + instance_id);
+            MelonLogger.Msg("instance_id: "+instance_id);
 
             PortalHistoryEntry newEntry = new PortalHistoryEntry(world_name, instance_id, roomId, apiWorldInstance);
             portalHistoryList.Add(newEntry);
