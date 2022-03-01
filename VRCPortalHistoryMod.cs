@@ -12,6 +12,7 @@ using VRC.Core;
 using UIExpansionKit.API;
 using VRChatUtilityKit.Utilities;
 using UnhollowerRuntimeLib.XrefScans;
+using MonoMod.Utils;
 
 namespace VRCPortalHistory
 {
@@ -110,7 +111,7 @@ namespace VRCPortalHistory
                 string button_text = portalHistoryEntry.world_name + "#" + portalHistoryEntry.instance_id;
 
                 menu.AddSimpleButton(button_text, () => {
-                    Utilities.CreatePortal(portalHistoryEntry.apiWorldInstance.world, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward, true);
+                    Utilities.CreatePortal(portalHistoryEntry.apiWorldInstance.world, portalHistoryEntry.apiWorldInstance, playerTransform.position, playerTransform.forward);
                 });
             }
 
@@ -134,30 +135,16 @@ namespace VRCPortalHistory
         }
     }
 
-    public static class Utilities
+    internal static class Utilities
     {
-        private static CreatePortalDelegate ourCreatePortalDelegate;
-
-        private delegate bool CreatePortalDelegate(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 position, Vector3 forward, bool withUIErrors);
-
-        private static CreatePortalDelegate GetCreatePortalDelegate
-        {
-            get
-            {
-                if (ourCreatePortalDelegate != null) return ourCreatePortalDelegate;
-                MethodInfo portalMethod = typeof(PortalInternal).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly).First(
-                    m => m.ReturnType == typeof(bool)
-                         && m.HasParameters(typeof(ApiWorld), typeof(ApiWorldInstance), typeof(Vector3), typeof(Vector3), typeof(bool))
-                         && m.XRefScanFor("admin_dont_allow_portal"));
-                ourCreatePortalDelegate = (CreatePortalDelegate)Delegate.CreateDelegate(typeof(CreatePortalDelegate), portalMethod);
-                return ourCreatePortalDelegate;
-            }
-        }
-
-        public static bool CreatePortal(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 position, Vector3 forward, bool showAlerts)
-        {
-            return GetCreatePortalDelegate(apiWorld, apiWorldInstance, position, forward, showAlerts);
-        }
+        public static bool CreatePortal(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 pos, Vector3 forward, Il2CppSystem.Action<string> someStrAction = null) =>
+            (_createPortalDelegate ??= CreatePortalMethod.CreateDelegate<CreatePortalDelegate>())(apiWorld, apiWorldInstance, pos, forward, someStrAction);
+        private delegate bool CreatePortalDelegate(ApiWorld apiWorld, ApiWorldInstance apiWorldInstance, Vector3 pos, Vector3 forward, Il2CppSystem.Action<string> someStrAction = null);
+        private static CreatePortalDelegate _createPortalDelegate;
+        private static MethodInfo _createPortalMethod;
+        public static MethodInfo CreatePortalMethod => _createPortalMethod ??= typeof(PortalInternal).GetMethods()
+                .First(method => method.Name.StartsWith("Method_Public_Static_Boolean_ApiWorld_ApiWorldInstance_Vector3_Vector3_Action_1_String_") &&
+                                 Utilities.ContainsStr(method, "admin_dont_allow_portal"));
 
         private static bool HasParameters(this MethodBase methodBase, params Type[] types)
         {
@@ -176,6 +163,17 @@ namespace VRCPortalHistory
         {
             return XrefScanner.XrefScan(methodBase).Any(
                 xref => xref.Type == XrefType.Global && xref.ReadAsObject()?.ToString().IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        public static bool ContainsStr(MethodBase methodBase, string match)
+        {
+            try
+            {
+                return XrefScanner.XrefScan(methodBase)
+                    .Any(instance => instance.Type == XrefType.Global &&
+                         instance.ReadAsObject()?.ToString().IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            catch { return false; }
         }
     }
 }
