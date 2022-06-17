@@ -10,7 +10,7 @@
     <RootNamespace>VRCPortalHistory</RootNamespace>
     <AssemblyName>VRCPortalHistory</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-	<LangVersion>8.0</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\VRChat\MelonLoader\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>VRCMelonLoaderLibs\MelonLoader\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
