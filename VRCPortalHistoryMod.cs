@@ -66,7 +66,7 @@ namespace VRCPortalHistory
 
             ApiWorldInstance apiWorldInstance = new ApiWorldInstance(world, roomId);
 
-            int instance_id = int.Parse(roomId.Split('~')[0]);
+            string instance_id = roomId.Split('~')[0];
             MelonLogger.Msg("instance_id: "+instance_id);
 
             PortalHistoryEntry newEntry = new PortalHistoryEntry(world_name, instance_id, roomId, apiWorldInstance);
@@ -116,7 +116,7 @@ namespace VRCPortalHistory
 
                 MelonLogger.Msg("world.id: " + current_world.id);
 
-                int instance_id = int.Parse(roomId.Split('~')[0].Split(':')[1]);
+                string instance_id = roomId.Split('~')[0].Split(':')[1];
                 MelonLogger.Msg("instance_id: " + instance_id);
 
                 PortalHistoryEntry newEntry = new PortalHistoryEntry(current_world.name, instance_id, roomId, current_world_instance);
@@ -141,11 +141,11 @@ namespace VRCPortalHistory
     class PortalHistoryEntry
     {
         public string world_name = null;
-        public int instance_id = 0;
+        public string instance_id = null;
         public string roomId = null;
         public ApiWorldInstance apiWorldInstance = null;
 
-        public PortalHistoryEntry(string world_name, int instance_id, string roomId, ApiWorldInstance apiWorldInstance)
+        public PortalHistoryEntry(string world_name, string instance_id, string roomId, ApiWorldInstance apiWorldInstance)
         {
             this.world_name = world_name;
             this.instance_id = instance_id;
