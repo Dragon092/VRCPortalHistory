@@ -94,15 +94,34 @@ namespace VRCPortalHistory
 
         private void respawnLastPortal()
         {
-            if (portalHistoryList.Count == 0)
-            {
-                MelonLogger.Msg("Error: no last entry");
-                return;
-            }
+            //if (portalHistoryList.Count == 0)
+            //{
+            //    MelonLogger.Msg("Error: no last entry");
+            //    return;
+            //}
 
             Transform playerTransform = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform;
 
             var menu = ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescription.QuickMenu4Columns);
+
+            menu.AddSimpleButton("Add current instance", () => {
+                ApiWorld current_world = RoomManager.field_Internal_Static_ApiWorld_0;
+                ApiWorldInstance current_world_instance = RoomManager.field_Internal_Static_ApiWorldInstance_0;
+
+                string roomId = current_world_instance.id;
+                MelonLogger.Msg("roomId: " + roomId);
+
+                string world_name = current_world.name;
+                MelonLogger.Msg("world_name: " + world_name);
+
+                MelonLogger.Msg("world.id: " + current_world.id);
+
+                int instance_id = int.Parse(roomId.Split('~')[0].Split(':')[1]);
+                MelonLogger.Msg("instance_id: " + instance_id);
+
+                PortalHistoryEntry newEntry = new PortalHistoryEntry(current_world.name, instance_id, roomId, current_world_instance);
+                portalHistoryList.Add(newEntry);
+            });
 
             foreach (PortalHistoryEntry portalHistoryEntry in portalHistoryList)
             {
